@@ -7,9 +7,11 @@
 #include "Arduino.h"
 #include "StepperDriver.h"
 
-int ticks = 0;
+StepperDriver *ptrSeppers[3]; // Stores pointer to stepper obejcts
+int stepperCount = 0;         // Stepper Objects created
 
-StepperDriver::StepperDriver(int stepPin, int directionPin, int ms1Pin, int ms2Pin, int ms3Pin, int rstPin)
+// Constructor
+StepperDriver::StepperDriver(int stepPin, int directionPin, int ms1Pin, int ms2Pin, int ms3Pin, int rstPin, int stepSpeed)
 {
   pinMode(stepPin, OUTPUT);
   pinMode(directionPin, OUTPUT);
@@ -28,24 +30,37 @@ StepperDriver::StepperDriver(int stepPin, int directionPin, int ms1Pin, int ms2P
   _directionPin = directionPin;
   _ms1Pin = ms1Pin;
   _ms2Pin = ms2Pin;
-  _ms3Pin = ms2Pin;
+  _ms3Pin = ms3Pin;
   _rstPin = rstPin;
 
+  _stepSpeed = stepSpeed;
+  _remainingSteps = 50;
+  _ticks = 0;
+  _number = stepperCount;
+
+  ptrSeppers[stepperCount] = this; // add to array of Objects
+  stepperCount++;
+
+  isr = &moveContinues;
+
   OCR0A = 0xAF;
-  TIMSK0 |= _BV(OCIE0A);
+  TIMSK0 |= (1 << OCIE0A);  // enable timer compare interrupt
 }
 
+// Enables the stepper hardware
 void StepperDriver::enable()
 {
   digitalWrite(_rstPin, HIGH);
 }
 
+// Disables the stepper hardware
 void StepperDriver::disable()
 {
   digitalWrite(_rstPin, LOW);
 }
 
-int StepperDriver::setMicrosteps(int steps)
+// Set Microsteps
+void StepperDriver::setMicrosteps(int steps)
 {
   switch (steps) {
     case 0:
@@ -78,6 +93,12 @@ int StepperDriver::setMicrosteps(int steps)
       digitalWrite(_ms2Pin, HIGH);
       digitalWrite(_ms3Pin, HIGH);
       break;
+    case 9:
+      // Sixteenth stepp
+      digitalWrite(_ms1Pin, LOW);
+      digitalWrite(_ms2Pin, LOW);
+      digitalWrite(_ms3Pin, HIGH);
+      break;
     default:
       // if nothing matches disable stepper
       disable();
@@ -85,15 +106,91 @@ int StepperDriver::setMicrosteps(int steps)
   }
 }
 
-// Interrupt is called once a millisecond, looks for any new GPS data, and stores it
+// only rotate amount of steps with a defined time per step
+void StepperDriver::moveSteps(StepperDriver *stepper)
+{
+  //Serial.println(stepper->_remainingSteps);
+  stepper->_ticks++;
+  if(stepper->_ticks > stepper->_stepSpeed/2 && stepper->_remainingSteps > 0)
+  {
+    stepper->_ticks=0;
+    if(digitalRead(stepper->_stepPin) == LOW)
+    {
+      digitalWrite(stepper->_stepPin,HIGH);
+      stepper->_remainingSteps--;
+    }
+    else
+    {
+      digitalWrite(stepper->_stepPin,LOW);
+    }
+  }
+}
+
+// Move until stop or disabled is called
+void StepperDriver::moveContinues(StepperDriver *stepper)
+{
+  stepper->_ticks++;
+  if(stepper->_ticks > stepper->_stepSpeed/2)
+  {
+    stepper->_ticks=0;
+    if(digitalRead(stepper->_stepPin) == LOW)
+    {
+      digitalWrite(stepper->_stepPin,HIGH);
+    }
+    else
+    {
+      digitalWrite(stepper->_stepPin,LOW);
+    }
+  }
+}
+
+// Stops the stepper motor from rotating
+void StepperDriver::activate(Mode mode)
+{
+  switch (mode) {
+    case off:
+      //hold
+      disable();
+      isr = &moveSteps; // isr should  be valid
+      break;
+    case step:
+      // continues
+      enable();
+      isr = &moveContinues; // mode
+      break;
+    case cont:
+      // move steps
+      enable();
+      isr = &moveSteps; // mode
+      break;
+    default:
+    break;
+  }
+}
+
+// Set the steps to drive during moveStepMode
+void StepperDriver::setStepsToDrive(int steps)
+{
+  _remainingSteps = steps;
+}
+
+// Set the speed
+void StepperDriver::setStepSpeed(int speed)
+{
+  _stepSpeed = speed;
+}
+
+// returns Stepper number
+int StepperDriver::getNumber()
+{
+  return _number;
+}
+
+
 SIGNAL(TIMER0_COMPA_vect)
 {
-  ticks++;
-  if(ticks >= 1){
-     ticks = 0;
-     if(digitalRead(12) == LOW)
-        digitalWrite(12, HIGH);
-     else
-       digitalWrite(12, LOW);
+  for (int i = 0; i < stepperCount; ++i)
+  {
+    ptrSeppers[i]->isr(*ptrSeppers[i]);
   }
 }
