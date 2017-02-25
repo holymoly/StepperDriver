@@ -3,7 +3,7 @@
 Arduino Stepper Motor library that is completly interrupt based. Build for [big easy driver](http://www.schmalzhaus.com/BigEasyDriver/index.html) compatible Boards.
 
 ## Overview
- * can control multiple Stpper Motors
+ * can control multiple Stepper Motors
  * timer interrupts use for stepping (currently timer0)
 
 ## Methods
