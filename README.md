@@ -43,7 +43,7 @@ example
   ```
 ## Examples
 ### Rotate Motor 1 Round with 1/16 stepping
-  ```
+```
 #include <StepperDriver.h>
 
 
@@ -64,9 +64,9 @@ void setup(void)
 void loop(void)
 {
 }
-  ```
+```
 ### Rotate Motor continues with full step width
-  ```
+```
 #include <StepperDriver.h>
 
 
@@ -84,4 +84,4 @@ void setup(void)
 void loop(void)
 {
 }
-  ```
+```
