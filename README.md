@@ -1,6 +1,6 @@
 # StepperDriver
 
-Arduino Stepper Motor library that is completly interrupt based. Build for [big easy driver](http://www.schmalzhaus.com/BigEasyDriver/index.html) compatible Boards.
+Arduino Stepper Motor library that is completely interrupt based. Build for [big easy driver](http://www.schmalzhaus.com/BigEasyDriver/index.html) compatible Boards.
 
 ## Overview
  * can control multiple Stepper Motors
@@ -21,7 +21,7 @@ StepperDriver stepperDriver(12,11,14,15,16,7,2);
   ```
 activate(Mode mode)
   ```
-Mode can bee cont, step or off
+Mode can be cont, step or off
     
 example 
   ```
@@ -31,7 +31,7 @@ stepperDriver.activate(cont);
   ```
 setStepsToDrive(int steps);
   ```
-Mode can bee cont, step or off
+Mode can be cont, step or off
     
 example 
     
@@ -39,7 +39,7 @@ example
     // set the steps
     stepperDriver.setStepsToDrive(200);
     // start rotation
-     stepperDriver.activate(step);
+    stepperDriver.activate(step);
   ```
 ## Examples
 ### Rotate Motor 1 Round with 1/16 stepping
@@ -76,7 +76,7 @@ StepperDriver stepperDriver(12,11,14,15,16,7,2);
 void setup(void)
 {
   //*************
-  // Activat continues
+  // Activate continues
   stepperDriver.activate(cont);
   //*************
 }
